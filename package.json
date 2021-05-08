@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "name": "swarm-bot",
+  "version": "0.0.0",
+  "description": "Discord bot used on Swarm's server",
+  "main": "index.js",
+  "author": "Philippe Schommers <philippe@schommers.be>",
+  "license": "UNLICENSED",
+  "keywords": [
+    "discord",
+    "bot",
+    "swarm"
+  ],
+  "dependencies": {
+    "@ethersproject/experimental": "^5.1.2",
+    "config": "^3.3.6",
+    "discord.js": "github:discordjs/discord.js",
+    "ethers": "^5.1.4"
+  }
+}
