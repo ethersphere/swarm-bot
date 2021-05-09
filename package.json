@@ -6,6 +6,9 @@
   "main": "index.js",
   "author": "Philippe Schommers <philippe@schommers.be>",
   "license": "UNLICENSED",
+  "scripts": {
+    "start": "node index.js"
+  },
   "keywords": [
     "discord",
     "bot",
