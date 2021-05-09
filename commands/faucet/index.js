@@ -1,5 +1,5 @@
 const config = require("config");
-const { providers, BigNumber, Wallet, Contract } = require("ethers");
+const { providers, utils, BigNumber, Wallet, Contract } = require("ethers");
 const { NonceManager } = require("@ethersproject/experimental");
 const abi = require("./abi.json");
 
@@ -30,8 +30,24 @@ const CONFIG = {
   ],
 };
 
+// Commands
 const sprinkle = async (interaction, options) => {
   const addresses = options[0].value.split(/[ ,;]/);
+
+  // Validate addresses
+  const invalid = addresses
+    .map((address) => !utils.isAddress(address) && address)
+    .filter(Boolean);
+
+  if (invalid.length) {
+    interaction.ephemeral(
+      `The following address${
+        invalid.length > 1 ? "es are" : " is"
+      } invalid: ${invalid.join(" ")}`
+    );
+    return;
+  }
+
   interaction.ephemeral(
     `Funding ${
       addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
