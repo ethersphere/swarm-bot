@@ -3,6 +3,10 @@ const { providers, utils, BigNumber, Wallet, Contract } = require("ethers");
 const { NonceManager } = require("@ethersproject/experimental");
 const abi = require("./abi.json");
 
+// Lib
+const { getUserId, getPermissions } = require("../../lib/permissions");
+const { getDuplicates } = require("../../lib/tools");
+
 // Ethers setup
 const provider = new providers.JsonRpcProvider(config.get("ethereum.endpoint"));
 const signer = new Wallet(config.get("ethereum.privateKey"), provider);
@@ -27,23 +31,117 @@ const CONFIG = {
         },
       ],
     },
+    {
+      name: "allowance",
+      description: "Returns the maximal number of pending sprinkles",
+      type: "SUB_COMMAND",
+    },
+    {
+      name: "remaining",
+      description: "Returns the number of available sprinkles",
+      type: "SUB_COMMAND",
+    },
+    {
+      name: "pending",
+      description:
+        "Lists nodes that you have sprinkled but have not been deployed yet",
+      type: "SUB_COMMAND",
+    },
   ],
 };
 
-// Commands
-const sprinkle = async (interaction, options) => {
-  const addresses = options[0].value.split(/[ ,;]/);
+// Redis key
+const sprinklesKey = (message) => `user:${getUserId(message)}:sprinkles`;
+const deployedKey = (message) => `user:${getUserId(message)}:deployed`;
 
+// Functions
+const getPending = async (interaction, { redis }) => {
+  return await redis.sdiff(sprinklesKey(interaction), deployedKey(interaction));
+};
+
+const getAllowance = async (interaction) => {
+  const permissions = await getPermissions(interaction);
+  return Math.max(...permissions.map(({ sprinkles }) => sprinkles));
+};
+
+const getRemaining = async (interaction, { redis }) => {
+  const allowance = await getAllowance(interaction, { redis });
+  const pending = await getPending(interaction, { redis });
+  return allowance - pending.length;
+};
+
+// Commands
+const pending = async (interaction, _, { redis }) => {
+  const pending = await getPending(interaction, { redis });
+  interaction.ephemeral(
+    `The following address${
+      pending.length > 1 ? "es are" : " is"
+    } still pending: ${pending.join(" ")}`
+  );
+};
+
+const allowance = async (interaction) => {
+  const allowance = await getAllowance(interaction);
+  interaction.ephemeral(`You can have ${allowance} pending sprinkles at most`);
+};
+
+const remaining = async (interaction, _, { redis }) => {
+  const remaining = await getRemaining(interaction, { redis });
+  interaction.ephemeral(
+    remaining
+      ? `You have ${remaining} sprinkle${remaining === 1 ? "" : "s"} left.`
+      : "You do not have any sprinkles left. Deploy sprinkled nodes to get sprinkles back."
+  );
+};
+
+const sprinkle = async (interaction, options, { redis }) => {
   // Validate addresses
-  const invalid = addresses
-    .map((address) => !utils.isAddress(address) && address)
-    .filter(Boolean);
+  const addresses = options[0].value.split(/[ ,;]/);
+  const invalid = addresses.flatMap((address) =>
+    !utils.isAddress(address) ? address : []
+  );
 
   if (invalid.length) {
     interaction.ephemeral(
       `The following address${
         invalid.length > 1 ? "es are" : " is"
       } invalid: ${invalid.join(" ")}`
+    );
+    return;
+  }
+
+  // Check if there are no duplicates
+  const duplicates = getDuplicates(addresses);
+  if (duplicates.length) {
+    interaction.ephemeral(
+      `Duplicated address${
+        duplicates.length > 1 ? "es" : ""
+      } found: ${duplicates.join(" ")}`
+    );
+    return;
+  }
+
+  // Check if the address was already sprinkled
+  const isMember = await redis.smismember("sprinkles", ...addresses);
+  const sprinkled = isMember.flatMap((isMember, index) =>
+    isMember ? addresses[index] : []
+  );
+  if (sprinkled.length) {
+    interaction.ephemeral(
+      `The following address${
+        sprinkled.length > 1 ? "es were" : " was"
+      } already sprinkled: ${sprinkled.join(" ")}`
+    );
+    return;
+  }
+
+  // Check if the user has enough sprinkles left
+  const remaining = await getRemaining(interaction, { redis });
+  if (addresses.length > remaining) {
+    interaction.ephemeral(
+      remaining
+        ? `You can only sprinkle ${remaining} more addresses.`
+        : "You don't have any sprinkles left."
     );
     return;
   }
@@ -55,8 +153,8 @@ const sprinkle = async (interaction, options) => {
   );
 
   // Amounts
-  const gbzzAmount = BigNumber.from(config.get("faucet.fund.gbzz"));
-  const ethAmount = BigNumber.from(config.get("faucet.fund.eth"));
+  const gbzzAmount = BigNumber.from(config.get("faucet.sprinkle.gbzz"));
+  const ethAmount = BigNumber.from(config.get("faucet.sprinkle.eth"));
 
   // Send
   const transactions = await Promise.all(
@@ -70,11 +168,15 @@ const sprinkle = async (interaction, options) => {
   // Wait
   await transactions.map((tx) => tx.wait());
   interaction.ephemeral(`Node${addresses.length > 1 ? "s" : ""} funded! :bee:`);
+
+  // Add sprinkled addresses to Redis
+  redis.sadd(sprinklesKey(interaction), ...addresses);
+  redis.sadd("sprinkles", ...addresses);
 };
 
 // Execute sub-commands
-const commands = { sprinkle };
-const execute = async (interaction) => {
+const commands = { sprinkle, remaining, allowance, pending };
+const execute = async (interaction, dependencies) => {
   let sent = false;
   interaction.ephemeral = (message) => {
     const fn = sent ? interaction.editReply : interaction.reply;
@@ -85,7 +187,7 @@ const execute = async (interaction) => {
   for (const { name, type, options } of interaction.options) {
     if (type === "SUB_COMMAND") {
       try {
-        await commands[name](interaction, options);
+        await commands[name](interaction, options, dependencies);
       } catch (err) {
         console.error(err);
         interaction.ephemeral(`An error occurred... :slight_frown:`);

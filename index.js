@@ -1,4 +1,8 @@
 const config = require("config");
+const Redis = require("ioredis");
+const redis = new Redis();
+
+// Discord.js
 const { Client, Intents } = require("discord.js");
 const client = new Client({
   intents: [Intents.FLAGS.GUILD, Intents.FLAGS.GUILD_MESSAGES],
@@ -42,12 +46,12 @@ client.on("interaction", (interaction) => {
     return;
   }
 
-  command.execute(interaction);
+  command.execute(interaction, { redis });
 });
 
 client.on("message", (message) => {
   for (const { execute } of messages) {
-    execute(message);
+    execute(message, { redis });
   }
 });
 
