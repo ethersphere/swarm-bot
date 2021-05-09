@@ -1,6 +1,6 @@
 const config = require("config");
 const Redis = require("ioredis");
-const redis = new Redis();
+const redis = new Redis(config.get("redis"));
 
 // Discord.js
 const { Client, Intents } = require("discord.js");

@@ -32,4 +32,10 @@ module.exports = {
       sprinkles: Infinity,
     },
   ],
+
+  redis: {
+    host: "redis",
+    port: 6379,
+    db: 0,
+  },
 };
