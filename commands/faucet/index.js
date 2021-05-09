@@ -1,5 +1,11 @@
 const config = require("config");
-const { providers, utils, BigNumber, Wallet, Contract } = require("ethers");
+const {
+  getDefaultProvider,
+  utils,
+  BigNumber,
+  Wallet,
+  Contract,
+} = require("ethers");
 const { NonceManager } = require("@ethersproject/experimental");
 const abi = require("./abi.json");
 
@@ -8,7 +14,7 @@ const { getUserId, getPermissions } = require("../../lib/permissions");
 const { getDuplicates } = require("../../lib/tools");
 
 // Ethers setup
-const provider = new providers.JsonRpcProvider(config.get("ethereum.endpoint"));
+const provider = getDefaultProvider(config.get("ethereum.endpoint"));
 const signer = new Wallet(config.get("ethereum.privateKey"), provider);
 const wallet = new NonceManager(signer);
 const gbzz = new Contract(config.get("contracts.gbzz"), abi, wallet);
@@ -50,7 +56,7 @@ const CONFIG = {
   ],
 };
 
-// Redis key
+// Redis keys
 const sprinklesKey = (message) => `user:${getUserId(message)}:sprinkles`;
 const deployedKey = (message) => `user:${getUserId(message)}:deployed`;
 
@@ -74,9 +80,11 @@ const getRemaining = async (interaction, { redis }) => {
 const pending = async (interaction, _, { redis }) => {
   const pending = await getPending(interaction, { redis });
   interaction.ephemeral(
-    `The following address${
-      pending.length > 1 ? "es are" : " is"
-    } still pending: ${pending.join(" ")}`
+    pending.length
+      ? `The following address${
+          pending.length > 1 ? "es are" : " is"
+        } still pending: ${pending.join(" ")}`
+      : "You don't have any pending deploys! :grin: :bee:"
   );
 };
 
@@ -96,7 +104,13 @@ const remaining = async (interaction, _, { redis }) => {
 
 const sprinkle = async (interaction, options, { redis }) => {
   // Validate addresses
-  const addresses = options[0].value.split(/[ ,;]/);
+  const addresses = options[0].value.split(/[ ,;]/).map((address) => {
+    try {
+      return utils.getAddress(address);
+    } catch (err) {
+      return address;
+    }
+  });
   const invalid = addresses.flatMap((address) =>
     !utils.isAddress(address) ? address : []
   );
@@ -172,6 +186,9 @@ const sprinkle = async (interaction, options, { redis }) => {
   // Add sprinkled addresses to Redis
   redis.sadd(sprinklesKey(interaction), ...addresses);
   redis.sadd("sprinkles", ...addresses);
+  addresses.map((address) =>
+    redis.sadd(`sprinkles:address:${address}`, getUserId(interaction))
+  );
 };
 
 // Execute sub-commands

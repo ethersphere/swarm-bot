@@ -8,6 +8,9 @@ const client = new Client({
   intents: [Intents.FLAGS.GUILD, Intents.FLAGS.GUILD_MESSAGES],
 });
 
+// Background jobs
+const deployed = require("./jobs/deployed");
+
 // Requires bot and applications.commands
 const commands = {
   faucet: require("./commands/faucet"),
@@ -55,4 +58,13 @@ client.on("message", (message) => {
   }
 });
 
+// Log into the bot
 client.login(config.get("bot.token"));
+
+// Start background jobs
+const jobs = {};
+
+(async () => {
+  jobs.deployed = await deployed.create(redis);
+  jobs.deployed.start();
+})();
