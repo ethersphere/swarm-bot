@@ -15,14 +15,14 @@ const CONFIG = {
   description: "Interact with the testnet faucet",
   options: [
     {
-      name: "fund",
-      description: "Funds your test node with gBZZ and gETH",
+      name: "sprinkle",
+      description: "Funds your test nodes with gBZZ and gETH",
       type: "SUB_COMMAND",
       options: [
         {
-          name: "address",
+          name: "addresses",
           type: "STRING",
-          description: "The Ethereum address of your node",
+          description: "The space-separated Ethereum addresses of your nodes",
           required: true,
         },
       ],
@@ -30,28 +30,34 @@ const CONFIG = {
   ],
 };
 
-const fund = async (interaction, options) => {
-  const to = options[0].value;
-  interaction.ephemeral(`Funding ${to}...`);
+const sprinkle = async (interaction, options) => {
+  const addresses = options[0].value.split(/[ ,;]/);
+  interaction.ephemeral(
+    `Funding ${
+      addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
+    }...`
+  );
 
   // Amounts
   const gbzzAmount = BigNumber.from(config.get("faucet.fund.gbzz"));
   const ethAmount = BigNumber.from(config.get("faucet.fund.eth"));
 
   // Send
-  const transactions = await Promise.all([
-    gbzz.transfer(to, gbzzAmount),
-    wallet.sendTransaction({ to, value: ethAmount }),
-  ]);
+  const transactions = await Promise.all(
+    addresses.flatMap((to) => [
+      gbzz.transfer(to, gbzzAmount),
+      wallet.sendTransaction({ to, value: ethAmount }),
+    ])
+  );
   interaction.ephemeral(`Waiting for confirmation...`);
 
   // Wait
   await transactions.map((tx) => tx.wait());
-  interaction.ephemeral(`Node funded! :bee:`);
+  interaction.ephemeral(`Node${addresses.length > 1 ? "s" : ""} funded! :bee:`);
 };
 
 // Execute sub-commands
-const commands = { fund };
+const commands = { sprinkle };
 const execute = async (interaction) => {
   let sent = false;
   interaction.ephemeral = (message) => {
