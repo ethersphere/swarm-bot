@@ -10,7 +10,7 @@ if (!config.get("server")) {
 // Discord.js
 const { Client, Intents } = require("discord.js");
 const client = new Client({
-  intents: [Intents.FLAGS.GUILD, Intents.FLAGS.GUILD_MESSAGES],
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
 
 // Background jobs
