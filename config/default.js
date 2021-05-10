@@ -40,4 +40,10 @@ module.exports = {
     port: 6379,
     db: 0,
   },
+
+  server:
+    {
+      official: "799027393297514537",
+      test: "840525910624960512",
+    }[process.env.DISCORD_SERVER] || process.env.DISCORD_SERVER,
 };

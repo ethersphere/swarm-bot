@@ -2,6 +2,11 @@ const config = require("config");
 const Redis = require("ioredis");
 const redis = new Redis(config.get("redis"));
 
+if (!config.get("server")) {
+  console.error("Please configure a server");
+  process.exit(-1);
+}
+
 // Discord.js
 const { Client, Intents } = require("discord.js");
 const client = new Client({
@@ -22,8 +27,7 @@ const messages = [require("./messages/sprinkle")];
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  const app = client.application;
-  //const app = client.guilds.cache.get("840525910624960512");
+  const app = client.guilds.cache.get(config.get("server"));
 
   // Delete old commands
   const oldCommands = await app.commands.fetch();
