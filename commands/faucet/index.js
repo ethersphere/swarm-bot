@@ -160,6 +160,7 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
+  console.log(`Funding ${addresses.join(" ")}`);
   interaction.ephemeral(
     `Funding ${
       addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
