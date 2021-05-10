@@ -22,7 +22,7 @@ const commands = {
 };
 
 // Requires Manage Messages
-const messages = [require("./messages/sprinkle")];
+const messages = [require("./messages/sprinkle"), require("./messages/faucet")];
 
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
