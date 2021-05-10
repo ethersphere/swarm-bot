@@ -22,8 +22,8 @@ const messages = [require("./messages/sprinkle")];
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  // const app = client.application
-  const app = client.guilds.cache.get("840525910624960512");
+  const app = client.application;
+  //const app = client.guilds.cache.get("840525910624960512");
 
   // Delete old commands
   const oldCommands = await app.commands.fetch();
