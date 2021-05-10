@@ -26,7 +26,7 @@ module.exports = {
   permissions: [
     {
       names: ["@everyone"],
-      sprinkles: 10,
+      sprinkles: 3,
     },
     {
       ids: ["840931347370737695", "840931856467492885"],
