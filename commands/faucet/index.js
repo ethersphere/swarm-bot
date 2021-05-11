@@ -163,6 +163,7 @@ const sprinkle = async (interaction, options, { redis }) => {
 
   // Lock the sprinkled addresses
   redis.sadd("sprinkles", ...addresses);
+  redis.sadd(sprinklesKey(interaction), ...addresses);
 
   try {
     console.log(`Funding ${addresses.join(" ")}`);
@@ -200,7 +201,6 @@ const sprinkle = async (interaction, options, { redis }) => {
     );
 
     // Add sprinkled addresses to Redis
-    redis.sadd(sprinklesKey(interaction), ...addresses);
     addresses.map((address) =>
       redis.sadd(`sprinkles:address:${address}`, getUserId(interaction))
     );
@@ -208,6 +208,7 @@ const sprinkle = async (interaction, options, { redis }) => {
     // Unlock the sprinkled addresses
     // TODO: Only unlock failed ones
     redis.srem("sprinkles", ...addresses);
+    redis.srem(sprinklesKey(interaction), ...addresses);
     throw err;
   }
 };
