@@ -14,6 +14,7 @@ module.exports = {
       eth: 50000000000000000n,
     },
     launchBlockHeight: 4461700,
+    channel: "840533720267489280",
   },
 
   contracts: {
@@ -41,9 +42,5 @@ module.exports = {
     db: 0,
   },
 
-  server:
-    {
-      official: "799027393297514537",
-      test: "840525910624960512",
-    }[process.env.DISCORD_SERVER] || process.env.DISCORD_SERVER,
+  server: "840525910624960512",
 };

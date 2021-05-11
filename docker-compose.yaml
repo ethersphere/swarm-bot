@@ -11,6 +11,7 @@ services:
       - BOT_TOKEN
       - ETH_PRIVATE_KEY
       - DISCORD_SERVER
+      - NODE_ENV
 
   redis:
     image: redis

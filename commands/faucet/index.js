@@ -164,7 +164,8 @@ const sprinkle = async (interaction, options, { redis }) => {
   interaction.ephemeral(
     `Funding ${
       addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
-    }...`
+    }...`,
+    { keep: true }
   );
 
   // Amounts
@@ -199,10 +200,26 @@ const sprinkle = async (interaction, options, { redis }) => {
 // Execute sub-commands
 const commands = { sprinkle, remaining, allowance, pending };
 const execute = async (interaction, dependencies) => {
+  // Get faucet channel
+  const channel = interaction.guild.channels.cache.get(
+    config.get("faucet.channel")
+  );
+
+  // Get current user
+  const user = interaction.user.toString();
+
   let sent = false;
-  interaction.ephemeral = (message) => {
+  let previous;
+
+  interaction.ephemeral = async (message, { keep = false } = {}) => {
+    // Remove the previous message and only keep the last one
+    previous && previous.then((message) => message.delete());
+    const msg = channel.send(`${user} ${message}`);
+    previous = !keep && msg;
+
     const fn = sent ? interaction.editReply : interaction.reply;
     sent = true;
+
     return fn.bind(interaction)(message, { ephemeral: true });
   };
 
