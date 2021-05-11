@@ -192,12 +192,14 @@ const sprinkle = async (interaction, options, { redis }) => {
       transactions.map((tx) => tx.wait()),
       ({ done, total }) => {
         interaction.ephemeral(
-          `Waiting for confirmations (${done}/${total})...`
+          `Waiting for confirmations (${done}/${total})...`,
+          { timing: done > 0 }
         );
       }
     );
     interaction.ephemeral(
-      `Node${addresses.length > 1 ? "s" : ""} funded! :bee:`
+      `Node${addresses.length > 1 ? "s" : ""} funded! :bee:`,
+      { timing: true }
     );
 
     // Add sprinkled addresses to Redis
@@ -228,13 +230,17 @@ const execute = async (interaction, dependencies) => {
   let sent = false;
   let previous;
 
-  interaction.ephemeral = async (message, { keep = false } = {}) => {
+  interaction.ephemeral = async (message, { keep = false, timing } = {}) => {
     // Remove the previous message and only keep the last one
     previous && previous.then((message) => message.delete());
     const msg = channel.send(
-      `${user} ${message} (${formatDistanceToNow(date, {
-        includeSeconds: true,
-      })})`
+      [
+        user,
+        message,
+        timing && `(${formatDistanceToNow(date, { includeSeconds: true })})`,
+      ]
+        .filter(Boolean)
+        .join(" ")
     );
     previous = !keep && msg;
 
