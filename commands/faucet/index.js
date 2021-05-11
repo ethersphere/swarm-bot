@@ -1,4 +1,5 @@
 const config = require("config");
+const { formatDistanceToNow } = require("date-fns");
 const {
   getDefaultProvider,
   utils,
@@ -208,13 +209,18 @@ const execute = async (interaction, dependencies) => {
   // Get current user
   const user = interaction.user.toString();
 
+  const date = new Date();
   let sent = false;
   let previous;
 
   interaction.ephemeral = async (message, { keep = false } = {}) => {
     // Remove the previous message and only keep the last one
     previous && previous.then((message) => message.delete());
-    const msg = channel.send(`${user} ${message}`);
+    const msg = channel.send(
+      `${user} ${message} (${formatDistanceToNow(date, {
+        includeSeconds: true,
+      })})`
+    );
     previous = !keep && msg;
 
     const fn = sent ? interaction.editReply : interaction.reply;
