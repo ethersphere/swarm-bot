@@ -181,7 +181,7 @@ const sprinkle = async (interaction, options, { redis }) => {
   interaction.ephemeral(`Waiting for confirmation...`);
 
   // Wait
-  await transactions.map((tx) => tx.wait());
+  await Promise.all(transactions.map((tx) => tx.wait()));
   interaction.ephemeral(`Node${addresses.length > 1 ? "s" : ""} funded! :bee:`);
 
   // Add sprinkled addresses to Redis
