@@ -44,7 +44,10 @@ client.on("ready", async () => {
 });
 
 client.on("interaction", (interaction) => {
-  if (!interaction.isCommand()) {
+  if (
+    !interaction.isCommand() ||
+    interaction.guildID !== config.get("server")
+  ) {
     return;
   }
 

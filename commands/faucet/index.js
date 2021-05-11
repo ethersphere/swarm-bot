@@ -11,7 +11,7 @@ const abi = require("./abi.json");
 
 // Lib
 const { getUserId, getPermissions } = require("../../lib/permissions");
-const { getDuplicates } = require("../../lib/tools");
+const { getDuplicates, promiseProgress } = require("../../lib/tools");
 
 // Ethers setup
 const provider = getDefaultProvider(config.get("ethereum.endpoint"));
@@ -178,10 +178,14 @@ const sprinkle = async (interaction, options, { redis }) => {
       wallet.sendTransaction({ to, value: ethAmount }),
     ])
   );
-  interaction.ephemeral(`Waiting for confirmation...`);
 
   // Wait
-  await Promise.all(transactions.map((tx) => tx.wait()));
+  await promiseProgress(
+    transactions.map((tx) => tx.wait()),
+    ({ done, total }) => {
+      interaction.ephemeral(`Waiting for confirmations (${done}/${total})...`);
+    }
+  );
   interaction.ephemeral(`Node${addresses.length > 1 ? "s" : ""} funded! :bee:`);
 
   // Add sprinkled addresses to Redis
