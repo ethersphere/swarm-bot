@@ -136,6 +136,17 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
+  // Check if the user has enough sprinkles left
+  const remaining = await getRemaining(interaction, { redis });
+  if (addresses.length > remaining) {
+    interaction.ephemeral(
+      remaining
+        ? `You can only sprinkle ${remaining} more addresses.`
+        : "You don't have any sprinkles left."
+    );
+    return;
+  }
+
   // Check if the address was already sprinkled
   const isMember = await redis.smismember("sprinkles", ...addresses);
   const sprinkled = isMember.flatMap((isMember, index) =>
@@ -150,52 +161,55 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
-  // Check if the user has enough sprinkles left
-  const remaining = await getRemaining(interaction, { redis });
-  if (addresses.length > remaining) {
-    interaction.ephemeral(
-      remaining
-        ? `You can only sprinkle ${remaining} more addresses.`
-        : "You don't have any sprinkles left."
-    );
-    return;
-  }
-
-  console.log(`Funding ${addresses.join(" ")}`);
-  interaction.ephemeral(
-    `Funding ${
-      addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
-    }...`,
-    { keep: true }
-  );
-
-  // Amounts
-  const gbzzAmount = BigNumber.from(config.get("faucet.sprinkle.gbzz"));
-  const ethAmount = BigNumber.from(config.get("faucet.sprinkle.eth"));
-
-  // Send
-  const transactions = await Promise.all(
-    addresses.flatMap((to) => [
-      gbzz.transfer(to, gbzzAmount),
-      wallet.sendTransaction({ to, value: ethAmount }),
-    ])
-  );
-
-  // Wait
-  await promiseProgress(
-    transactions.map((tx) => tx.wait()),
-    ({ done, total }) => {
-      interaction.ephemeral(`Waiting for confirmations (${done}/${total})...`);
-    }
-  );
-  interaction.ephemeral(`Node${addresses.length > 1 ? "s" : ""} funded! :bee:`);
-
-  // Add sprinkled addresses to Redis
-  redis.sadd(sprinklesKey(interaction), ...addresses);
+  // Lock the sprinkled addresses
   redis.sadd("sprinkles", ...addresses);
-  addresses.map((address) =>
-    redis.sadd(`sprinkles:address:${address}`, getUserId(interaction))
-  );
+
+  try {
+    console.log(`Funding ${addresses.join(" ")}`);
+    interaction.ephemeral(
+      `Funding ${
+        addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
+      }...`,
+      { keep: true }
+    );
+
+    // Amounts
+    const gbzzAmount = BigNumber.from(config.get("faucet.sprinkle.gbzz"));
+    const ethAmount = BigNumber.from(config.get("faucet.sprinkle.eth"));
+
+    // Send
+    // TODO: Only send missing amount
+    const transactions = await Promise.all(
+      addresses.flatMap((to) => [
+        gbzz.transfer(to, gbzzAmount),
+        wallet.sendTransaction({ to, value: ethAmount }),
+      ])
+    );
+
+    // Wait
+    await promiseProgress(
+      transactions.map((tx) => tx.wait()),
+      ({ done, total }) => {
+        interaction.ephemeral(
+          `Waiting for confirmations (${done}/${total})...`
+        );
+      }
+    );
+    interaction.ephemeral(
+      `Node${addresses.length > 1 ? "s" : ""} funded! :bee:`
+    );
+
+    // Add sprinkled addresses to Redis
+    redis.sadd(sprinklesKey(interaction), ...addresses);
+    addresses.map((address) =>
+      redis.sadd(`sprinkles:address:${address}`, getUserId(interaction))
+    );
+  } catch (err) {
+    // Unlock the sprinkled addresses
+    // TODO: Only unlock failed ones
+    redis.srem("sprinkles", ...addresses);
+    throw err;
+  }
 };
 
 // Execute sub-commands
