@@ -36,6 +36,12 @@ const CONFIG = {
           description: "The space-separated Ethereum addresses of your nodes",
           required: true,
         },
+        {
+          name: "force",
+          type: "BOOLEAN",
+          description:
+            "Force the transaction without checking for allowance or status",
+        },
       ],
     },
     {
@@ -77,6 +83,11 @@ const getRemaining = async (interaction, { redis }) => {
   return allowance - pending.length;
 };
 
+const canForce = async (interaction) => {
+  const permissions = await getPermissions(interaction);
+  return permissions.some(({ forceSprinkle }) => forceSprinkle);
+};
+
 // Commands
 const pending = async (interaction, _, { redis }) => {
   const pending = await getPending(interaction, { redis });
@@ -105,13 +116,15 @@ const remaining = async (interaction, _, { redis }) => {
 
 const sprinkle = async (interaction, options, { redis }) => {
   // Validate addresses
-  const addresses = options[0].value.split(/[ ,;]/).map((address) => {
-    try {
-      return utils.getAddress(address);
-    } catch (err) {
-      return address;
-    }
-  });
+  const addresses = getOption(options, "addresses")
+    .value.split(/[ ,;]/)
+    .map((address) => {
+      try {
+        return utils.getAddress(address);
+      } catch (err) {
+        return address;
+      }
+    });
   const invalid = addresses.flatMap((address) =>
     !utils.isAddress(address) ? address : []
   );
@@ -147,12 +160,21 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
+  // Check if the user is allowed to force a sprinkle
+  const force = getOption(options, "force");
+  if (force && !(await canForce(interaction))) {
+    interaction.ephemeral(
+      `What do you think you're doing you little hacker? :detective:`
+    );
+    return;
+  }
+
   // Check if the address was already sprinkled
   const isMember = await redis.smismember("sprinkles", ...addresses);
   const sprinkled = isMember.flatMap((isMember, index) =>
     isMember ? addresses[index] : []
   );
-  if (sprinkled.length) {
+  if (!force && sprinkled.length) {
     interaction.ephemeral(
       `The following address${
         sprinkled.length > 1 ? "es were" : " was"
@@ -163,7 +185,9 @@ const sprinkle = async (interaction, options, { redis }) => {
 
   // Lock the sprinkled addresses
   redis.sadd("sprinkles", ...addresses);
-  redis.sadd(sprinklesKey(interaction), ...addresses);
+  if (remaining !== Infinity) {
+    redis.sadd(sprinklesKey(interaction), ...addresses);
+  }
 
   try {
     console.log(`Funding ${addresses.join(" ")}`);
