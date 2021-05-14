@@ -194,7 +194,7 @@ const sprinkle = async (interaction, options, { redis }) => {
     interaction.ephemeral(
       `Funding ${
         addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
-      }...`,
+      }...${force ? " (force)" : ""}`,
       { keep: true }
     );
 
