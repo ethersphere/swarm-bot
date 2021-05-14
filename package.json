@@ -20,6 +20,7 @@
     "date-fns": "^2.21.3",
     "discord.js": "github:discordjs/discord.js",
     "ethers": "^5.1.4",
-    "ioredis": "^4.27.2"
+    "ioredis": "^4.27.2",
+    "regex-parser": "^2.2.11"
   }
 }

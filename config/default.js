@@ -34,6 +34,11 @@ module.exports = {
       names: ["swarm-team", "support-team"],
       sprinkles: Infinity,
     },
+    {
+      ids: ["811300081441046529"],
+      names: ["swarm-team"],
+      cleaner: true,
+    },
   ],
 
   redis: {

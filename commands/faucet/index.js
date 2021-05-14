@@ -11,6 +11,7 @@ const { NonceManager } = require("@ethersproject/experimental");
 const abi = require("./abi.json");
 
 // Lib
+const { execute } = require("../lib");
 const { getUserId, getPermissions } = require("../../lib/permissions");
 const { getDuplicates, promiseProgress } = require("../../lib/tools");
 
@@ -75,6 +76,40 @@ const getRemaining = async (interaction, { redis }) => {
   const allowance = await getAllowance(interaction, { redis });
   const pending = await getPending(interaction, { redis });
   return allowance - pending.length;
+};
+
+const decorate = (interaction) => {
+  // Get faucet channel
+  const channel = interaction.guild.channels.cache.get(
+    config.get("faucet.channel")
+  );
+
+  // Get current user
+  const user = interaction.user.toString();
+
+  // Some state
+  const date = new Date();
+  let previous;
+
+  // Overwrite the ephemeral function
+  interaction._ephemeral = interaction.ephemeral;
+  interaction.ephemeral = async (message, { keep = false, timing } = {}) => {
+    // Remove the previous message and only keep the last one
+    previous && previous.then((message) => message.delete());
+    const msg = channel.send(
+      [
+        user,
+        message,
+        timing && `(${formatDistanceToNow(date, { includeSeconds: true })})`,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
+    previous = !keep && msg;
+
+    // Forward to the original function
+    return interaction._ephemeral(message);
+  };
 };
 
 // Commands
@@ -215,54 +250,8 @@ const sprinkle = async (interaction, options, { redis }) => {
   }
 };
 
-// Execute sub-commands
 const commands = { sprinkle, remaining, allowance, pending };
-const execute = async (interaction, dependencies) => {
-  // Get faucet channel
-  const channel = interaction.guild.channels.cache.get(
-    config.get("faucet.channel")
-  );
-
-  // Get current user
-  const user = interaction.user.toString();
-
-  const date = new Date();
-  let sent = false;
-  let previous;
-
-  interaction.ephemeral = async (message, { keep = false, timing } = {}) => {
-    // Remove the previous message and only keep the last one
-    previous && previous.then((message) => message.delete());
-    const msg = channel.send(
-      [
-        user,
-        message,
-        timing && `(${formatDistanceToNow(date, { includeSeconds: true })})`,
-      ]
-        .filter(Boolean)
-        .join(" ")
-    );
-    previous = !keep && msg;
-
-    const fn = sent ? interaction.editReply : interaction.reply;
-    sent = true;
-
-    return fn.bind(interaction)(message, { ephemeral: true });
-  };
-
-  for (const { name, type, options } of interaction.options) {
-    if (type === "SUB_COMMAND") {
-      try {
-        await commands[name](interaction, options, dependencies);
-      } catch (err) {
-        console.error(err);
-        interaction.ephemeral(`An error occurred... :slight_frown:`);
-      }
-    }
-  }
-};
-
 module.exports = {
   CONFIG,
-  execute,
+  execute: execute.bind(null, commands, { decorate }),
 };

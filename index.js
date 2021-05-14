@@ -19,10 +19,11 @@ const deployed = require("./jobs/deployed");
 // Requires bot and applications.commands
 const commands = {
   faucet: require("./commands/faucet"),
+  cleaner: require("./commands/cleaner"),
 };
 
 // Requires Manage Messages
-const messages = [require("./messages/sprinkle"), require("./messages/faucet")];
+const messages = [require("./messages/cleaner")];
 
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
