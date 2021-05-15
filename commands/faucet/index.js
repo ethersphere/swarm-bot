@@ -11,7 +11,7 @@ const { NonceManager } = require("@ethersproject/experimental");
 const abi = require("./abi.json");
 
 // Lib
-const { execute } = require("../lib");
+const { execute, getOption } = require("../lib");
 const { getUserId, getPermissions } = require("../../lib/permissions");
 const { getDuplicates, promiseProgress } = require("../../lib/tools");
 

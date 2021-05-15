@@ -38,6 +38,15 @@ const execute = async (
   }
 };
 
+const getOption = (options, name) => {
+  for (const option of options) {
+    if (option.name === name) {
+      return option;
+    }
+  }
+};
+
 module.exports = {
   execute,
+  getOption,
 };
