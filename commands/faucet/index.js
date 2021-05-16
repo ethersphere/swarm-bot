@@ -198,9 +198,7 @@ const sprinkle = async (interaction, options, { redis }) => {
   // Check if the user is allowed to force a sprinkle
   const force = getOption(options, "force");
   if (force && !(await canForce(interaction))) {
-    interaction.ephemeral(
-      `What do you think you're doing you little hacker? :detective:`
-    );
+    interaction.ephemeral("We know what you're up to... :detective:");
     return;
   }
 
