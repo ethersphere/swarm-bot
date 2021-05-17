@@ -10,7 +10,7 @@ module.exports = {
 
   faucet: {
     sprinkle: {
-      gbzz: 100000000000000000n,
+      gbzz: 10000000000000000n,
       eth: 50000000000000000n,
     },
     launchBlockHeight: 4461700,
