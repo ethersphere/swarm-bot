@@ -7,6 +7,12 @@
         "internalType": "address",
         "name": "addr",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum SwarmFaucet.FundState",
+        "name": "state",
+        "type": "uint8"
       }
     ],
     "name": "Funded",
@@ -415,13 +421,7 @@
       }
     ],
     "name": "fund",
-    "outputs": [
-      {
-        "internalType": "bool[]",
-        "name": "successes",
-        "type": "bool[]"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },

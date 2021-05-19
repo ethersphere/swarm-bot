@@ -62,16 +62,16 @@ const create = async ({ redis, discord }) => {
       const result = await promiseTimeout(tx.wait(), timeout);
 
       // Read all events (which addresses were funded)
-      const success = {};
+      const states = {};
       for (const event of result.events) {
         if (event.topics.includes(eventTopic)) {
-          success[event.args.addr] = true;
+          states[event.args.addr] = event.args.state;
         }
       }
 
       const results = await Promise.all(
         addresses.map(async (address) => ({
-          success: !!success[address],
+          state: states[address] === undefined ? 1 : states[address],
           address,
           ...(await redis.hgetall(addressKey(address))),
         }))
@@ -87,13 +87,18 @@ const create = async ({ redis, discord }) => {
           .get(result.guild)
           .channels.cache.get(config.get("faucet.channel"));
 
-        const time = formatDistanceToNow(result.date, { includeSeconds: true });
+        const time = formatDistanceToNow(new Date(parseInt(result.date)), {
+          includeSeconds: true,
+        });
+        const messages = {
+          0: `sprinkled! (${time}}) :bee:`,
+          1: "not sprinkled because of an error... :cry:",
+          2: "already sprinkled... :no_entry_sign:",
+        };
         channel.send(
           `<@${result.user}> Your node ${result.address} was ${
-            result.success
-              ? `sprinkled! (${time}}) :bee:`
-              : "already sprinkled... :no_entry_sign:"
-          }'`
+            messages[result.state]
+          }`
         );
       }
     } catch (err) {
