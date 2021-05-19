@@ -40,7 +40,6 @@ const create = async ({ redis, discord }) => {
       return;
     }
 
-    console.log("Fetching gas price...");
     const gasPrice = (await provider.getGasPrice()).add(
       utils.parseUnits((2 * attempt).toString(), "gwei")
     );
