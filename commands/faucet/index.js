@@ -205,7 +205,9 @@ const sprinkle = async (interaction, options, { redis }) => {
       "user",
       getUserId(interaction),
       "guild",
-      interaction.guildID
+      interaction.guildID,
+      "date",
+      Date.now()
     );
   }
   await multi.exec();
