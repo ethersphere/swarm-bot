@@ -15,7 +15,6 @@
     "swarm"
   ],
   "dependencies": {
-    "@ethersproject/experimental": "^5.1.2",
     "config": "^3.3.6",
     "date-fns": "^2.21.3",
     "discord.js": "git+https://github.com/discordjs/discord.js.git",
