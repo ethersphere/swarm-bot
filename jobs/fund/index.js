@@ -11,6 +11,10 @@ const sprinklesKey = (user) => `user:${user}:sprinkles`;
 // Functions
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const promiseTimeout = (promise, ms) => {
+  if (ms < 0) {
+    return promise;
+  }
+
   const timeout = new Promise((_, reject) => {
     const id = setTimeout(() => {
       clearTimeout(id);
@@ -19,6 +23,9 @@ const promiseTimeout = (promise, ms) => {
   });
 
   return Promise.race([promise, timeout]);
+};
+const minBigNumber = (a, b) => {
+  return a.gt(b) ? b : a;
 };
 
 // Ethers setup
@@ -40,9 +47,9 @@ const create = async ({ redis, discord }) => {
       return;
     }
 
-    const gasPrice = (await provider.getGasPrice()).add(
-      utils.parseUnits((2 * attempt).toString(), "gwei")
-    );
+    const add = utils.parseUnits((2 * attempt).toString(), "gwei");
+    const max = utils.parseUnits(config.get("jobs.fund.maxGasPrice"), "gwei");
+    const gasPrice = minBigNumber((await provider.getGasPrice()).add(add), max);
 
     try {
       const tx = await faucet.fund(addresses, { gasPrice });
@@ -50,7 +57,10 @@ const create = async ({ redis, discord }) => {
         `Bulk funding ${addresses.length} addresses at ${tx.hash} (${gasPrice} gwei)`
       );
 
-      const result = await promiseTimeout(tx.wait(), 30 * 1000);
+      const timeout = gasPrice.eq(max) ? -1 : 30 * 1000;
+      const result = await promiseTimeout(tx.wait(), timeout);
+
+      // Read all events (which addresses were funded)
       const success = {};
       for (const event of result.events) {
         if (event.topics.includes(eventTopic)) {
