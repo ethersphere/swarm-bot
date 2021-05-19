@@ -87,11 +87,15 @@ const create = async ({ redis, discord }) => {
           .get(result.guild)
           .channels.cache.get(config.get("faucet.channel"));
 
-        const time = formatDistanceToNow(new Date(parseInt(result.date)), {
-          includeSeconds: true,
-        });
+        // This check is temporary for older Redis records
+        const time =
+          result.date &&
+          formatDistanceToNow(new Date(parseInt(result.date)), {
+            includeSeconds: true,
+          });
+
         const messages = {
-          0: `sprinkled! (${time}}) :bee:`,
+          0: `sprinkled!${time ? ` (${time})` : ""} :bee:`,
           1: "not sprinkled because of an error... :cry:",
           2: "already sprinkled... :no_entry_sign:",
         };
