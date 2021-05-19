@@ -20,6 +20,7 @@ module.exports = {
   contracts: {
     gbzz: "0x2ac3c1d3e24b45c6c310534bc2dd84b5ed576335",
     sw3: "0xf0277caffea72734853b834afc9892461ea18474",
+    faucet: "0x5114e7B44656D6c1906B9509d04779Ff77102382",
   },
 
   // Can be filtered by names or ids
@@ -49,4 +50,13 @@ module.exports = {
   },
 
   server: "840525910624960512",
+
+  jobs: {
+    fund: {
+      checkInterval: 1000, // In ms
+      maxFundInterval: 10 * 1000, // In ms
+      minQueue: 1, // Number of addresses in queue to force a transaction
+      maxBatch: 50, // Maximum number of transactions to do at the same time
+    },
+  },
 };

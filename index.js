@@ -15,6 +15,7 @@ const client = new Client({
 
 // Background jobs
 const deployed = require("./jobs/deployed");
+const fund = require("./jobs/fund");
 
 // Requires bot and applications.commands
 const commands = {
@@ -75,4 +76,7 @@ const jobs = {};
 (async () => {
   jobs.deployed = await deployed.create(redis);
   jobs.deployed.start();
+
+  jobs.fund = await fund.create({ redis, discord: client });
+  jobs.fund.start();
 })();

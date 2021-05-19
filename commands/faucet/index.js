@@ -1,25 +1,11 @@
 const config = require("config");
 const { formatDistanceToNow } = require("date-fns");
-const {
-  getDefaultProvider,
-  utils,
-  BigNumber,
-  Wallet,
-  Contract,
-} = require("ethers");
-const { NonceManager } = require("@ethersproject/experimental");
-const abi = require("./abi.json");
+const { utils } = require("ethers");
 
 // Lib
 const { execute, getOption } = require("../lib");
 const { getUserId, getPermissions } = require("../../lib/permissions");
-const { getDuplicates, promiseProgress } = require("../../lib/tools");
-
-// Ethers setup
-const provider = getDefaultProvider(config.get("ethereum.endpoint"));
-const signer = new Wallet(config.get("ethereum.privateKey"), provider);
-const wallet = new NonceManager(signer);
-const gbzz = new Contract(config.get("contracts.gbzz"), abi, wallet);
+const { getDuplicates } = require("../../lib/tools");
 
 // Command
 const CONFIG = {
@@ -61,12 +47,19 @@ const CONFIG = {
         "Lists nodes that you have sprinkled but have not been deployed yet",
       type: "SUB_COMMAND",
     },
+    {
+      name: "queue",
+      description: "Displays the number of addresses in the sprinkle queue",
+      type: "SUB_COMMAND",
+    },
   ],
 };
 
 // Redis keys
 const sprinklesKey = (message) => `user:${getUserId(message)}:sprinkles`;
 const deployedKey = (message) => `user:${getUserId(message)}:deployed`;
+const addressKey = (address) => `address:${address}:sprinkle`;
+const QUEUE_KEY = "spinkles:queue";
 
 // Functions
 const getPending = async (interaction, { redis }) => {
@@ -216,63 +209,39 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
-  // Lock the sprinkled addresses
-  redis.sadd("sprinkles", ...addresses);
-  if (remaining !== Infinity) {
-    redis.sadd(sprinklesKey(interaction), ...addresses);
+  const multi = await redis.multi();
+  for (const address of addresses) {
+    multi.rpush(QUEUE_KEY, address);
+    multi.hset(
+      addressKey(address),
+      "interaction",
+      interaction.id,
+      "user",
+      getUserId(interaction),
+      "guild",
+      interaction.guildID
+    );
   }
+  await multi.exec();
 
-  try {
-    console.log(`Funding ${addresses.join(" ")}`);
-    interaction.ephemeral(
-      `Funding ${
-        addresses.length > 1 ? `${addresses.length} addresses` : addresses[0]
-      }...${force ? " (force)" : ""}`,
-      { keep: true }
-    );
-
-    // Amounts
-    const gbzzAmount = BigNumber.from(config.get("faucet.sprinkle.gbzz"));
-    const ethAmount = BigNumber.from(config.get("faucet.sprinkle.eth"));
-
-    // Send
-    // TODO: Only send missing amount
-    const transactions = await Promise.all(
-      addresses.flatMap((to) => [
-        gbzz.transfer(to, gbzzAmount),
-        wallet.sendTransaction({ to, value: ethAmount }),
-      ])
-    );
-
-    // Wait
-    await promiseProgress(
-      transactions.map((tx) => tx.wait()),
-      ({ done, total }) => {
-        interaction.ephemeral(
-          `Waiting for confirmations (${done}/${total})...`,
-          { timing: done > 0 }
-        );
-      }
-    );
-    interaction.ephemeral(
-      `Node${addresses.length > 1 ? "s" : ""} funded! :bee:`,
-      { timing: true }
-    );
-
-    // Add sprinkled addresses to Redis
-    addresses.map((address) =>
-      redis.sadd(`sprinkles:address:${address}`, getUserId(interaction))
-    );
-  } catch (err) {
-    // Unlock the sprinkled addresses
-    // TODO: Only unlock failed ones
-    redis.srem("sprinkles", ...addresses);
-    redis.srem(sprinklesKey(interaction), ...addresses);
-    throw err;
-  }
+  console.log(`Funding ${addresses.join(" ")}`);
+  interaction.ephemeral(
+    `${
+      addresses.length > 1
+        ? `${addresses.length} addresses were`
+        : `${addresses[0]} was`
+    } queued...`
+  );
 };
 
-const commands = { sprinkle, remaining, allowance, pending };
+const queue = async (interaction, _, { redis }) => {
+  const count = await redis.llen(QUEUE_KEY);
+  interaction.ephemeral(
+    `There are currently ${count} addresses waiting to be sprinkled`
+  );
+};
+
+const commands = { sprinkle, remaining, allowance, pending, queue };
 module.exports = {
   CONFIG,
   execute: execute.bind(null, commands, { decorate }),
