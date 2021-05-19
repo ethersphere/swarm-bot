@@ -87,7 +87,11 @@ const create = async ({ redis, discord }) => {
           .channels.cache.get(config.get("faucet.channel"));
 
         channel.send(
-          `<@${result.user}> Your node ${result.address} was sprinkled! :bee:`
+          `<@${result.user}> Your node ${result.address} was ${
+            result.success
+              ? "sprinkled! :bee:"
+              : "already sprinkled... :no_entry_sign:"
+          }'`
         );
       }
     } catch (err) {
