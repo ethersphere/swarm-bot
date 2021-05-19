@@ -54,7 +54,7 @@ module.exports = {
   jobs: {
     fund: {
       checkInterval: 1000, // In ms
-      maxFundInterval: 10 * 1000, // In ms
+      maxFundInterval: 60 * 1000, // In ms
       minQueue: 1, // Number of addresses in queue to force a transaction
       maxBatch: 50, // Maximum number of transactions to do at the same time
     },
