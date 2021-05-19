@@ -47,8 +47,9 @@ const create = async ({ redis, discord }) => {
       return;
     }
 
+    const maxGasPrice = config.get("jobs.fund.maxGasPrice").toString();
+    const max = utils.parseUnits(maxGasPrice, "gwei");
     const add = utils.parseUnits((2 * attempt).toString(), "gwei");
-    const max = utils.parseUnits(config.get("jobs.fund.maxGasPrice"), "gwei");
     const gasPrice = minBigNumber((await provider.getGasPrice()).add(add), max);
 
     try {
