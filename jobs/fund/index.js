@@ -1,5 +1,5 @@
 const config = require("config");
-const { subMilliseconds } = require("date-fns");
+const { subMilliseconds, formatDistanceToNow } = require("date-fns");
 const { getDefaultProvider, Wallet, Contract, utils } = require("ethers");
 const abi = require("./abi.json");
 
@@ -86,10 +86,11 @@ const create = async ({ redis, discord }) => {
           .get(result.guild)
           .channels.cache.get(config.get("faucet.channel"));
 
+        const time = formatDistanceToNow(result.date, { includeSeconds: true });
         channel.send(
           `<@${result.user}> Your node ${result.address} was ${
             result.success
-              ? "sprinkled! :bee:"
+              ? `sprinkled! (${time}}) :bee:`
               : "already sprinkled... :no_entry_sign:"
           }'`
         );
