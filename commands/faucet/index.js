@@ -195,20 +195,6 @@ const sprinkle = async (interaction, options, { redis }) => {
     return;
   }
 
-  // Check if the address was already sprinkled
-  const isMember = await redis.smismember("sprinkles", ...addresses);
-  const sprinkled = isMember.flatMap((isMember, index) =>
-    isMember ? addresses[index] : []
-  );
-  if (!force && sprinkled.length) {
-    interaction.ephemeral(
-      `The following address${
-        sprinkled.length > 1 ? "es were" : " was"
-      } already sprinkled: ${sprinkled.join(" ")}`
-    );
-    return;
-  }
-
   const multi = await redis.multi();
   for (const address of addresses) {
     multi.rpush(QUEUE_KEY, address);
