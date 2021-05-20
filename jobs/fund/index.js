@@ -78,9 +78,9 @@ const create = async ({ redis, discord }) => {
       );
 
       await redis.lpop(QUEUE_KEY, addresses.length);
-      await results.map((result) =>
-        redis.sadd(sprinklesKey(result.user), result.address)
-      );
+      await results
+        .filter((result) => result.state === 0)
+        .map((result) => redis.sadd(sprinklesKey(result.user), result.address));
 
       for (const result of results) {
         const channel = discord.guilds.cache
