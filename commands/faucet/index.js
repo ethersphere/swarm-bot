@@ -190,7 +190,7 @@ const sprinkle = async (interaction, options, { redis }) => {
     interaction.ephemeral(
       remaining
         ? `You can only sprinkle ${remaining} more addresses.`
-        : "You don't have any sprinkles left."
+        : "You don't have any sprinkles left, please deploy your sprinkled nodes to be gifted more!"
     );
     return;
   }
