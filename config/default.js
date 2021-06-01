@@ -60,4 +60,8 @@ module.exports = {
       maxGasPrice: 500, // In gwei
     },
   },
+
+  plurRadio: {
+    channel: "849257505762574396",
+  },
 };
