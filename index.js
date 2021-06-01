@@ -10,12 +10,17 @@ if (!config.get("server")) {
 // Discord.js
 const { Client, Intents } = require("discord.js");
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_VOICE_STATES,
+  ],
 });
 
 // Background jobs
 const deployed = require("./jobs/deployed");
 const fund = require("./jobs/fund");
+const plurRadio = require("./jobs/plur-radio");
 
 // Requires bot and applications.commands
 const commands = {
@@ -25,6 +30,21 @@ const commands = {
 
 // Requires Manage Messages
 const messages = [require("./messages/cleaner")];
+
+// Jobs
+const jobs = {};
+
+// Functions
+async function startJobs() {
+  jobs.deployed = await deployed.create(redis);
+  jobs.deployed.start();
+
+  jobs.fund = await fund.create({ redis, discord: client });
+  jobs.fund.start();
+
+  jobs.plurRadio = await plurRadio.create({ discord: client });
+  jobs.plurRadio.start();
+}
 
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -43,6 +63,10 @@ client.on("ready", async () => {
   );
 
   console.log(`Commands set up`);
+
+  await startJobs();
+
+  console.log("Jobs started");
 });
 
 client.on("interaction", (interaction) => {
@@ -70,13 +94,19 @@ client.on("message", (message) => {
 // Log into the bot
 client.login(config.get("bot.token"));
 
-// Start background jobs
-const jobs = {};
+// Graceful shutdown
+const events = ["SIGINT", "SIGTERM", "SIGQUIT"];
+const gracefulShutdown = async () => {
+  console.log("Stopping jobs...");
+  for (const job of Object.values(jobs)) {
+    if (job.stop) {
+      await job.stop();
+    }
+  }
 
-(async () => {
-  jobs.deployed = await deployed.create(redis);
-  jobs.deployed.start();
+  console.log("Closing redis and Discord...");
+  client.destroy();
+  redis.disconnect();
+};
 
-  jobs.fund = await fund.create({ redis, discord: client });
-  jobs.fund.start();
-})();
+events.map((event) => process.on(event, gracefulShutdown));
