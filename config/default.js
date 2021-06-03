@@ -57,7 +57,7 @@ module.exports = {
       maxFundInterval: 60 * 1000, // In ms
       minQueue: 1, // Number of addresses in queue to force a transaction
       maxBatch: 50, // Maximum number of transactions to do at the same time
-      maxGasPrice: 500, // In gwei
+      maxGasPrice: 1000, // In gwei
     },
   },
 
