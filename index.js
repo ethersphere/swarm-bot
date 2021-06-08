@@ -29,7 +29,10 @@ const commands = {
 };
 
 // Requires Manage Messages
-const messages = [require("./messages/cleaner")];
+const messages = [
+  require("./messages/cleaner"),
+  require("./messages/foreign-languages"),
+];
 
 // Jobs
 const jobs = {};

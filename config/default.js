@@ -35,6 +35,7 @@ module.exports = {
       names: ["swarm-team", "support-team"],
       sprinkles: Infinity,
       forceSprinkle: true,
+      foreignLanguages: true,
     },
     {
       ids: ["811300081441046529"],
