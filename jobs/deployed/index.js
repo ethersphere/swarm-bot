@@ -1,9 +1,12 @@
 const config = require("config");
-const { getDefaultProvider, utils, Contract } = require("ethers");
+const { utils, Contract } = require("ethers");
 
 // ABI
 const sw3Abi = require("./abis/sw3.json");
 const ssAbi = require("./abis/ss.json");
+
+// Lib
+const { getProvider } = require("../../lib/tools");
 
 // Config
 const DEPLOYED_KEY = "events:simple-swap-deployed:blockNumber";
@@ -24,7 +27,7 @@ const cleanOutput = (object) => {
 };
 
 const create = async (redis) => {
-  const provider = getDefaultProvider(config.get("ethereum.endpoint"));
+  const provider = getProvider();
   const address = config.get("contracts.sw3");
   const contract = new Contract(address, sw3Abi, provider);
 

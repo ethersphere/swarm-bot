@@ -5,7 +5,19 @@ module.exports = {
 
   ethereum: {
     privateKey: process.env.ETH_PRIVATE_KEY,
-    endpoint: "ws://srv02.apyos.com:8546",
+    endpoint: "wss://goerli.infura.io/ws/v3/7232dd50de3c49e1842650219cc1626e",
+    providerOptions: {
+      timeout: 30000,
+      clientConfig: {
+        keepalive: true,
+        keepaliveInterval: 60000,
+      },
+      reconnect: {
+        auto: true,
+        onTimeout: true,
+        maxAttempts: false,
+      },
+    },
   },
 
   faucet: {
