@@ -1,7 +1,10 @@
 const config = require("config");
 const { subMilliseconds, formatDistanceToNow } = require("date-fns");
-const { getDefaultProvider, Wallet, Contract, utils } = require("ethers");
+const { Wallet, Contract, utils } = require("ethers");
 const abi = require("./abi.json");
+
+// Lib
+const { getProvider } = require("../../lib/tools");
 
 // Redis keys
 const QUEUE_KEY = "spinkles:queue";
@@ -29,7 +32,7 @@ const minBigNumber = (a, b) => {
 };
 
 // Ethers setup
-const provider = getDefaultProvider(config.get("ethereum.endpoint"));
+const provider = getProvider();
 const wallet = new Wallet(config.get("ethereum.privateKey"), provider);
 const faucet = new Contract(config.get("contracts.faucet"), abi, wallet);
 
