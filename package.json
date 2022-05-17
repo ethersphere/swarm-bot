@@ -19,7 +19,7 @@
     "bufferutil": "^4.0.6",
     "config": "^3.3.7",
     "date-fns": "^2.28.0",
-    "discord.js": "^12.5.3",
+    "discord.js": "github:discordjs/discord.js#c8d20a456b635ce6081ed8ad17315a9a0c0244bc",
     "erlpack": "github:discord/erlpack",
     "ethers": "^5.6.6",
     "ioredis": "^5.0.4",
