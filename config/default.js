@@ -5,7 +5,7 @@ module.exports = {
 
   ethereum: {
     privateKey: process.env.ETH_PRIVATE_KEY,
-    endpoint: "wss://goerli.infura.io/ws/v3/7232dd50de3c49e1842650219cc1626e",
+    endpoint: process.env.ETH_ENDPOINT,
     providerOptions: {
       timeout: 30000,
       clientConfig: {
