@@ -15,18 +15,18 @@
     "swarm"
   ],
   "dependencies": {
-    "@discordjs/opus": "^0.5.0",
-    "bufferutil": "^4.0.3",
-    "config": "^3.3.6",
-    "date-fns": "^2.21.3",
-    "discord.js": "git+https://github.com/discordjs/discord.js.git",
+    "@discordjs/opus": "^0.7.0",
+    "bufferutil": "^4.0.6",
+    "config": "^3.3.7",
+    "date-fns": "^2.28.0",
+    "discord.js": "^13.7.0",
     "erlpack": "github:discord/erlpack",
-    "ethers": "^5.1.4",
-    "ioredis": "^4.27.2",
-    "libsodium-wrappers": "^0.7.9",
+    "ethers": "^5.6.6",
+    "ioredis": "^5.0.4",
+    "libsodium-wrappers": "^0.7.10",
     "regex-parser": "^2.2.11",
-    "utf-8-validate": "^5.0.5",
-    "web3-providers-ws": "^1.6.0",
+    "utf-8-validate": "^5.0.9",
+    "web3-providers-ws": "^1.7.3",
     "zlib-sync": "^0.1.7"
   }
 }
