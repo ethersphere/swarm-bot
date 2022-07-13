@@ -43,8 +43,8 @@ module.exports = {
       sprinkles: 3,
     },
     {
-      ids: ["840931347370737695", "840931856467492885"],
-      names: ["swarm-team", "support-team"],
+      ids: ["840931347370737695", "840931856467492885", "996772167591141376"],
+      names: ["swarm-team", "support-team", "FDS"],
       sprinkles: Infinity,
       forceSprinkle: true,
       foreignLanguages: true,
